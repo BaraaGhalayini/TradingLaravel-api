@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Currencie;
+use App\Http\Resources\CurrencieResource;
 
 class CurrencieController extends Controller
 {
@@ -13,7 +14,8 @@ class CurrencieController extends Controller
      */
     public function index()
     {
-        return Currencie::all();
+        $Currencie = Currencie::all();
+        return CurrencieResource::collection($Currencie);
     }
 
 
