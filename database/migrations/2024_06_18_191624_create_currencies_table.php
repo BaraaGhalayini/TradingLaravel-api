@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('currencies', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
             $table->string('name', 255);
             $table->integer('entry_price')->nullable();
             $table->integer('tp1')->nullable();
@@ -22,8 +21,10 @@ return new class extends Migration
             $table->integer('tp4')->nullable();
             $table->integer('tp5')->nullable();
             $table->integer('sl')->nullable();
-            $table->enum('status', ['buy', 'sell']);
+            $table->enum('status', ['buy', 'sell'])->nullable();
             $table->string('sgy_type')->nullable();
+            $table->softDeletes();
+            $table->timestamps();
         });
     }
 

@@ -20,7 +20,11 @@ Route::get('/', function () {
     return 1;
 });
 
-Route::get('/Currencies', [CurrencieController::class , 'index'])->middleware('auth:sanctum');
+// Route::get('/Currencies', [CurrencieController::class , 'index'])->middleware('auth:sanctum');
+// Route::get('/Currencies', [CurrencieController::class , 'index']);
+
+Route::apiResource('Currencies', CurrencieController::class)->middleware('auth:sanctum');
+
 Route::get('/login', [LoginController::class , 'login']);
 
 
