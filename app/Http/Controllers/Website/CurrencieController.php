@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Website;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Currencie;
 
 class CurrencieController extends Controller
 {
@@ -12,7 +13,8 @@ class CurrencieController extends Controller
      */
     public function index()
     {
-        //
+        $Currencie = Currencie::all();
+        return view('tradeing', compact('Currencie'));
     }
 
     /**
