@@ -33,7 +33,7 @@
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover">
+                    <table class="table table-striped table-hover table-center">
                         <thead>
                             <tr>
                                 <th scope="col"><i class="fas fa-hashtag"></i></th> <!-- رقم -->
@@ -50,15 +50,21 @@
 
                         <tbody id="pricesTableBody">
                             @foreach ($Prices_Symbols as $Price_Symbol)
-                            <tr data-symbol="{{ $Price_Symbol->currency_name }}">
+                            @php
+                                $percentageChange = $Price_Symbol->percentage_change;
+                                $percentageChangeClass = $percentageChange >= 0 ? 'bg-success text-light' : 'bg-danger text-light';
+                                $currentPriceClass = 'bg-info text-dark fw-bold';
+                                $currentValueClass = 'bg-primary text-light';
+                            @endphp
+                            <tr >
                                 <td scope="row">{{ $loop->iteration }}</td>
-                                <td scope="row" class="symbol">{{ $Price_Symbol->currency_name }}USDT</td>
-                                <td scope="row" class="price">{{ number_format($Price_Symbol->current_price, 2) }}</td>
-                                <td scope="row">{{ number_format($Price_Symbol->average_buy_price, 2) }}</td>
-                                <td scope="row">{{ number_format($Price_Symbol->percentage_change, 2) }}%</td>
+                                <td scope="row" class="symbol ">{{ $Price_Symbol->currency_name }}USDT</td>
+                                <td scope="row" class="{{ $currentPriceClass }}">{{ number_format($Price_Symbol->current_price, 3) }} $</td>
+                                <td scope="row">{{ number_format($Price_Symbol->average_buy_price, 3) }} $</td>
+                                <td scope="row" class="{{ $percentageChangeClass }}">{{ number_format($percentageChange, 2) }}%</td>
                                 <td scope="row">{{ number_format($Price_Symbol->quantity, 2) }}</td>
-                                <td scope="row">{{ number_format($Price_Symbol->purchase_amount, 2) }}</td>
-                                <td scope="row">{{ number_format($Price_Symbol->current_value, 2) }}</td>
+                                <td scope="row">{{ number_format($Price_Symbol->purchase_amount, 1) }} $</td>
+                                <td scope="row" class="{{ $currentValueClass }}">{{ number_format($Price_Symbol->current_value, 1) }} $</td>
                                 <td scope="row">
                                     <button type="button" class="btn btn-warning btn-sm"
                                             data-bs-toggle="modal"
@@ -78,7 +84,7 @@
                                         @csrf
                                         @method('DELETE')
                                         <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal" data-id="{{ $Price_Symbol->id }}">
-                                            <i class="fas fa-trash-alt"></i> حذف
+                                            <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </form>
                                 </td>

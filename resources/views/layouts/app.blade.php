@@ -26,7 +26,12 @@
         <!-- Toastr JS -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
-
+        <style>
+            .table-center td,
+            .table-center th {
+                text-align: center;
+            }
+        </style>
         @livewireStyles
     </head>
     <body class="font-sans antialiased">
