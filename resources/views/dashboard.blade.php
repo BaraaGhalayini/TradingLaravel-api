@@ -221,6 +221,45 @@
         </div>
     </div>
 
+    <script>
+        $(document).ready(function() {
+            $('#createForm').on('submit', function(e) {
+                e.preventDefault(); // منع إرسال النموذج بالطريقة التقليدية
+
+                $.ajax({
+                    url: "{{ route('price-symbols.store') }}",
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        // تخزين رسالة الإشعار في localStorage
+                        localStorage.setItem('toastrMessage', 'تم تحديث الأسعار بنجاح');
+
+                        // إغلاق الموديل وإعادة تحميل البيانات
+                        $('#createModal').modal('hide');
+                        location.reload(); // إعادة تحميل الصفحة
+                    },
+                    error: function(xhr) {
+                        // عرض الأخطاء داخل الموديل
+                        let errors = xhr.responseJSON.errors;
+                        $('.text-danger').text(''); // مسح الرسائل السابقة
+                        $.each(errors, function(key, value) {
+                            $('#' + key + '_error').text(value[0]); // عرض الرسالة المناسبة
+                        });
+                    }
+                });
+            });
+
+            // عرض إشعار Toastr إذا كان هناك رسالة مخزنة
+            const toastrMessage = localStorage.getItem('toastrMessage');
+            if (toastrMessage) {
+                toastr.success(toastrMessage);
+                localStorage.removeItem('toastrMessage'); // إزالة الرسالة بعد عرضها
+            }
+        });
+    </script>
+    <!-- End for Adding  New Currency -->
+
+
     <!-- Modal for Editing Currency -->
     <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -265,40 +304,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Modal for Deleting Currency -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="deleteModalLabel">تأكيد الحذف</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="deleteForm" action="" method="POST">
-                    @csrf
-                    @method('DELETE')
-                    <div class="modal-body">
-                        هل أنت متأكد أنك تريد حذف هذه العملة؟ هذه العملية لا يمكن التراجع عنها.
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                        <button type="submit" class="btn btn-danger">حذف</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- JavaScript لتحديث action الخاص بالنموذج داخل النافذة المنبثقة -->
-    <script>
-        const deleteModal = document.getElementById('deleteModal');
-        deleteModal.addEventListener('show.bs.modal', event => {
-            const button = event.relatedTarget;
-            const id = button.getAttribute('data-id');
-            const form = deleteModal.querySelector('form');
-            form.action = `/price-symbols/${id}`;
-        });
-    </script>
 
     <script>
         $(document).ready(function() {
@@ -349,44 +354,49 @@
             });
         });
     </script>
+    <!-- End for Editing Currency -->
 
 
-<script>
-    $(document).ready(function() {
-        $('#createForm').on('submit', function(e) {
-            e.preventDefault(); // منع إرسال النموذج بالطريقة التقليدية
+    <!-- Modal for Deleting Currency -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">تأكيد الحذف</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="deleteForm" action="" method="POST">
+                    @csrf
+                    @method('DELETE')
+                    <div class="modal-body">
+                        هل أنت متأكد أنك تريد حذف هذه العملة؟ هذه العملية لا يمكن التراجع عنها.
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                        <button type="submit" class="btn btn-danger">حذف</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
-            $.ajax({
-                url: "{{ route('price-symbols.store') }}",
-                type: 'POST',
-                data: $(this).serialize(),
-                success: function(response) {
-                    // تخزين رسالة الإشعار في localStorage
-                    localStorage.setItem('toastrMessage', 'تم تحديث الأسعار بنجاح');
-
-                    // إغلاق الموديل وإعادة تحميل البيانات
-                    $('#createModal').modal('hide');
-                    location.reload(); // إعادة تحميل الصفحة
-                },
-                error: function(xhr) {
-                    // عرض الأخطاء داخل الموديل
-                    let errors = xhr.responseJSON.errors;
-                    $('.text-danger').text(''); // مسح الرسائل السابقة
-                    $.each(errors, function(key, value) {
-                        $('#' + key + '_error').text(value[0]); // عرض الرسالة المناسبة
-                    });
-                }
-            });
+    <!-- JavaScript لتحديث action الخاص بالنموذج داخل النافذة المنبثقة -->
+    <script>
+        const deleteModal = document.getElementById('deleteModal');
+        deleteModal.addEventListener('show.bs.modal', event => {
+            const button = event.relatedTarget;
+            const id = button.getAttribute('data-id');
+            const form = deleteModal.querySelector('form');
+            form.action = `/price-symbols/${id}`;
         });
+    </script>
 
-        // عرض إشعار Toastr إذا كان هناك رسالة مخزنة
-        const toastrMessage = localStorage.getItem('toastrMessage');
-        if (toastrMessage) {
-            toastr.success(toastrMessage);
-            localStorage.removeItem('toastrMessage'); // إزالة الرسالة بعد عرضها
-        }
-    });
-</script>
+    <!-- End for Deleting Currency -->
+
+
+
+
+
 
 @if (session('success'))
     <script>

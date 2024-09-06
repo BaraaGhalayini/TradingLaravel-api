@@ -88,7 +88,7 @@ class PriceSymbolController extends Controller
                     $price = (float) $data['price'];
 
                     // الحصول على عدد الخانات العشرية
-                    $decimalInfo = $decimals[$formattedSymbol] ?? ['price' => 2]; // افتراض 2 إذا لم تتوفر المعلومات
+                    $decimalInfo = $decimals[$formattedSymbol] ?? ['price' => 3]; // افتراض 2 إذا لم تتوفر المعلومات
 
                     // تنسيق السعر بناءً على عدد الخانات العشرية
                     $formattedPrice = number_format($price, $decimalInfo['price'], '.', '');
@@ -123,7 +123,7 @@ class PriceSymbolController extends Controller
 
                 if ($priceSymbol) {
                     // الحصول على عدد الخانات العشرية
-                    $decimalInfo = $decimals[$symbol] ?? ['price' => 2, 'quantity' => 2]; // افتراض 2 إذا لم تتوفر المعلومات
+                    $decimalInfo = $decimals[$symbol] ?? ['price' => 3, 'quantity' => 3]; // افتراض 2 إذا لم تتوفر المعلومات
 
                     $currentPrice = (float) $price;
                     $averageBuyPrice = $priceSymbol->average_buy_price;
@@ -135,7 +135,7 @@ class PriceSymbolController extends Controller
 
                     // تنسيق القيم بناءً على عدد الخانات العشرية
                     $currentPrice = number_format($currentPrice, $decimalInfo['price'], '.', '');
-                    $percentageChange = number_format($percentageChange, 2, '.', '');
+                    $percentageChange = number_format($percentageChange, 3, '.', '');
                     $currentValue = number_format($currentValue, $decimalInfo['price'], '.', '');
                     $purchaseAmount = number_format($purchaseAmount, $decimalInfo['price'], '.', '');
 
@@ -165,34 +165,34 @@ class PriceSymbolController extends Controller
     }
 
     public function store(Request $request)
-{
-    $request->validate([
-        'currency_name' => 'required|string|max:255',
-        'current_price' => 'nullable|numeric',
-        'average_buy_price' => 'required|numeric',
-        'percentage_change' => 'nullable|numeric',
-        'quantity' => 'required|numeric',
-        'purchase_amount' => 'nullable|numeric',
-        'current_value' => 'nullable|numeric',
-    ]);
+    {
+        $request->validate([
+            'currency_name' => 'required|string|max:255',
+            'current_price' => 'nullable|numeric',
+            'average_buy_price' => 'required|numeric',
+            'percentage_change' => 'nullable|numeric',
+            'quantity' => 'required|numeric',
+            'purchase_amount' => 'nullable|numeric',
+            'current_value' => 'nullable|numeric',
+        ]);
 
-    try {
-        // تحويل اسم العملة إلى أحرف كبيرة
-        $currencyName = strtoupper($request->input('currency_name'));
+        try {
+            // تحويل اسم العملة إلى أحرف كبيرة
+            $currencyName = strtoupper($request->input('currency_name'));
 
-        // إعداد البيانات المعدلة
-        $data = $request->all();
-        $data['currency_name'] = $currencyName;
+            // إعداد البيانات المعدلة
+            $data = $request->all();
+            $data['currency_name'] = $currencyName;
 
-        // إنشاء سجل جديد باستخدام البيانات المعدلة
-        PriceSymbol::create($data);
+            // إنشاء سجل جديد باستخدام البيانات المعدلة
+            PriceSymbol::create($data);
 
-        return redirect()->route('price-symbols.index')->with('success', 'تمت إضافة العملة بنجاح');
-    } catch (\Exception $e) {
-        Log::error('Error saving PriceSymbol: ' . $e->getMessage());
-        return redirect()->back()->with('error', 'حدث خطأ أثناء إضافة العملة.');
+            return redirect()->route('price-symbols.index')->with('success', 'تمت إضافة العملة بنجاح');
+        } catch (\Exception $e) {
+            Log::error('Error saving PriceSymbol: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'حدث خطأ أثناء إضافة العملة.');
+        }
     }
-}
 
 
 
@@ -206,6 +206,7 @@ class PriceSymbolController extends Controller
 
     public function update(Request $request, $id)
     {
+
         $request->validate([
             'currency_name' => 'required|string|max:255',
             'current_price' => 'nullable|numeric',
@@ -216,15 +217,39 @@ class PriceSymbolController extends Controller
             'current_value' => 'nullable|numeric',
         ]);
 
-        $priceSymbol = PriceSymbol::findOrFail($id);
+        try {
+            $priceSymbol = PriceSymbol::findOrFail($id);
 
-        $currencyName = strtoupper($request->input('currency_name'));
+            $currencyName = strtoupper($request->input('currency_name'));
 
-        $priceSymbol->update(array_merge($request->all(), ['currency_name' => $currencyName]));
+            // $priceSymbol->update(array_merge($request->all(), ['currency_name' => $currencyName]));
 
-        $priceSymbol->update($request->all());
+            // $priceSymbol->update($request->all());
 
-        return redirect()->route('price-symbols.index')->with('success', 'تم تعديل العملة بنجاح');
+            $priceSymbol->update([
+                'currency_name' =>  $currencyName,
+                'average_buy_price' => $request->input('average_buy_price'),
+                'quantity' => $request->input('quantity'),
+                'purchase_amount' => $request->input('purchase_amount'),
+            ]);
+
+            // $priceSymbol::Update ([
+            //     'currency_name' => $currencyName,
+            //     'current_price' => $request->current_price,
+            //     'average_buy_price' => $request->average_buy_price,
+            //     'percentage_change' => $request->percentage_change,
+            //     'quantity' => $request->quantity ,
+            //     'purchase_amount' => $request->purchase_amount,
+            //     'current_value' => $request->current_value,
+            // ]);
+
+            return response()->json(['success' => 'Price symbol updated successfully']);
+            // return redirect()->route('price-symbols.index')->with('success', 'تم تعديل العملة بنجاح');
+
+        } catch (\Exception $e) {
+            Log::error('Error updating PriceSymbol: ' . $e->getMessage());
+            return response()->json(['error' => 'Error updating PriceSymbol'], 500);
+        }
     }
 
     public function destroy($id)
