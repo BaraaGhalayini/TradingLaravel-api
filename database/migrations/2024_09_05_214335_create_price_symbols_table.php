@@ -14,12 +14,12 @@ return new class extends Migration
         Schema::create('price_symbols', function (Blueprint $table) {
             $table->id();
             $table->string('currency_name'); // اسم العملة الرقمية
-            $table->decimal('current_price', 16, 8); // السعر الحالي
+            $table->decimal('current_price', 16, 8)->nullable(); // السعر الحالي
             $table->decimal('average_buy_price', 16, 8); // متوسط سعر الشراء
-            $table->decimal('percentage_change', 5, 2); // نسبة التغير
+            $table->decimal('percentage_change', 5, 2)->nullable(); // نسبة التغير
             $table->decimal('quantity', 16, 8); // الكمية التي تم شراؤها
-            $table->decimal('purchase_amount', 16, 2); // مبلغ الشراء
-            $table->decimal('current_value', 16, 2); // قيمة المبلغ الآن
+            $table->decimal('purchase_amount', 16, 2)->nullable(); // مبلغ الشراء
+            $table->decimal('current_value', 16, 2)->nullable(); // قيمة المبلغ الآن
             $table->timestamps(); // التواريخ الافتراضية (created_at, updated_at)
         });
     }

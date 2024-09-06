@@ -24,5 +24,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
 
     Route::resource('price-symbols', PriceSymbolController::class);
 
+    Route::get('/api/prices', [PriceSymbolController::class, 'getPrices'])->name('prices.api');
+    Route::post('/api/update-prices', [PriceSymbolController::class, 'updatePrices']);
+
 
 });
