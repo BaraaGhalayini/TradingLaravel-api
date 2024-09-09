@@ -1,3 +1,9 @@
+{{-- @extends('layouts.app')
+
+@section('content')
+    @livewire('price-symbols-new')
+@endsection  --}}
+
 <x-app-layout>
     <x-slot name="header">
         <ul class="nav font-semibold text-xl text-gray-800" >
@@ -13,6 +19,9 @@
             </li>
         </ul>
     </x-slot>
+
+    @livewire('price-symbol')
+
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -399,10 +408,6 @@
     </script>
 
     <!-- End for Deleting Currency -->
-
-
-
-
 
 
 @if (session('success'))
