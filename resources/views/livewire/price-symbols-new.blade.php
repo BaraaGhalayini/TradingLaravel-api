@@ -2,22 +2,66 @@
 
     @section('script_head')
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- تأكد من إضافة jQuery -->
     <script>
+        $(document).ready(function() {
 
-        // Enable pusher logging - don't include this in production
-        Pusher.logToConsole = true;
+            // Enable pusher logging - don't include this in production
+            // Pusher.logToConsole = true;
 
-        var pusher = new Pusher('e1d45d9b703669bce3ca', {
-        cluster: 'eu'
-        });
+            // إعداد الاتصال بـ Pusher
+            var pusher = new Pusher('e1d45d9b703669bce3ca', {
+                cluster: 'eu'
+            });
 
-        var channel = pusher.subscribe('my-channel');
-        channel.bind('my-event', function(data) {
-        alert(JSON.stringify(data));
+            var channel = pusher.subscribe('my-channel');
+            channel.bind('my-event', function(data) {
+                console.log('Received data:', data); // إضافة هذا السطر للتأكد من تلقي البيانات
+                // تحقق من صحة البيانات قبل التحديث
+                if (data && Array.isArray(data)) {
+                    updatePricesTable(data);
+                }
+            });
+
+            // دالة لتحديث جدول الأسعار بناءً على البيانات الجديدة
+            function updatePricesTable(data) {
+                var $pricesTableBody = $('#pricesTableBody');
+                $pricesTableBody.empty(); // مسح الجدول الحالي
+
+                data.forEach(function(item, index) {
+                    // التأكد من وجود جميع الحقول الضرورية
+                    if (item.currency_name && item.current_price !== undefined && item.average_buy_price !== undefined && item.percentage_change !== undefined && item.quantity !== undefined && item.purchase_amount !== undefined && item.current_value !== undefined) {
+                        var row = `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${item.currency_name}USDT</td>
+                                <td class="bg-info text-dark fw-bold">${parseFloat(item.current_price).toFixed(3)} $</td>
+                                <td>${parseFloat(item.average_buy_price).toFixed(3)} $</td>
+                                <td class="${item.percentage_change >= 0 ? 'bg-success text-light' : 'bg-danger text-light'}">${parseFloat(item.percentage_change).toFixed(2)}%</td>
+                                <td>${parseFloat(item.quantity).toFixed(2)}</td>
+                                <td>${parseFloat(item.purchase_amount).toFixed(1)} $</td>
+                                <td class="${item.current_value >= item.purchase_amount ? 'bg-success text-light' : 'bg-danger text-light fw-bold'}">${parseFloat(item.current_value).toFixed(1)} $</td>
+                                <td>
+                                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-id="${item.id}" data-bs-target="#editModal">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <form action="/price-symbols/destroy/${item.id}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal" data-id="${item.id}">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        `;
+                        $pricesTableBody.append(row);
+                    }
+                });
+            }
         });
     </script>
     @endsection
-
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -25,12 +69,11 @@
                 <div class="d-flex justify-content-between align-items-center p-3">
                     <h3>إدارة العملات الرقمية</h3>
                     <div class="d-flex">
-                        <!-- Add New Currency Button -->
+                        <!-- زر إضافة عملة جديدة -->
                         <a href="#" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#createModal">
                             <i class="fas fa-plus-circle"></i> إضافة عملة جديدة
                         </a>
-
-                        <!-- Refresh Button -->
+                        <!-- زر التحديث -->
                         <button type="button" class="btn btn-secondary" id="refreshButton">
                             <i class="fas fa-sync"></i> تحديث
                         </button>
@@ -41,60 +84,41 @@
                     <table class="table table-striped table-hover table-center">
                         <thead>
                             <tr>
-                                <th scope="col"><i class="fas fa-hashtag"></i></th> <!-- رقم -->
-                                <th scope="col"><i class="fas fa-coins"></i> اسم العملة</th> <!-- اسم العملة -->
-                                <th scope="col"><i class="fas fa-dollar-sign"></i> السعر الحالي</th> <!-- السعر الحالي -->
-                                <th scope="col"><i class="fas fa-chart-line"></i> متوسط سعر الشراء</th> <!-- متوسط سعر الشراء -->
-                                <th scope="col"><i class="fas fa-percentage"></i> نسبة التغير</th> <!-- نسبة التغير -->
-                                <th scope="col"><i class="fas fa-boxes"></i> الكمية التي تم شراؤها</th> <!-- الكمية التي تم شراؤها -->
-                                <th scope="col"><i class="fas fa-wallet"></i> مبلغ الشراء</th> <!-- مبلغ الشراء -->
-                                <th scope="col"><i class="fas fa-money-bill-wave"></i> قيمة المبلغ الآن</th> <!-- قيمة المبلغ الآن -->
-                                <th scope="col"><i class="fas fa-cogs"></i> إجراءات</th> <!-- العمود لإظهار أزرار التعديل والحذف -->
+                                <th scope="col"><i class="fas fa-hashtag"></i></th>
+                                <th scope="col"><i class="fas fa-coins"></i> اسم العملة</th>
+                                <th scope="col"><i class="fas fa-dollar-sign"></i> السعر الحالي</th>
+                                <th scope="col"><i class="fas fa-chart-line"></i> متوسط سعر الشراء</th>
+                                <th scope="col"><i class="fas fa-percentage"></i> نسبة التغير</th>
+                                <th scope="col"><i class="fas fa-boxes"></i> الكمية التي تم شراؤها</th>
+                                <th scope="col"><i class="fas fa-wallet"></i> مبلغ الشراء</th>
+                                <th scope="col"><i class="fas fa-money-bill-wave"></i> قيمة المبلغ الآن</th>
+                                <th scope="col"><i class="fas fa-cogs"></i> إجراءات</th>
                             </tr>
                         </thead>
-
                         <tbody id="pricesTableBody">
                             @foreach ($pricesSymbols as $Price_Symbol)
-                            @php
-                                $percentageChange = $Price_Symbol->percentage_change;
-                                $percentageChangeClass = $percentageChange >= 0 ? 'bg-success text-light' : 'bg-danger text-light';
-                                $currentPriceClass = 'bg-info text-dark fw-bold';
-                                // $currentValueClass = 'bg-primary text-light';
-                                $currentValueClass = $Price_Symbol->current_value >= $Price_Symbol->purchase_amount ? 'bg-success text-light' : 'bg-danger text-light fw-bold';
-                            @endphp
-                            <tr >
-                                <td scope="row">{{ $loop->iteration }}</td>
-                                <td scope="row" class="symbol ">{{ $Price_Symbol->currency_name }}USDT</td>
-                                <td scope="row" class="{{ $currentPriceClass }}">{{ number_format($Price_Symbol->current_price, 3) }} $</td>
-                                <td scope="row">{{ number_format($Price_Symbol->average_buy_price, 3) }} $</td>
-                                <td scope="row" class="{{ $percentageChangeClass }}">{{ number_format($percentageChange, 2) }}%</td>
-                                <td scope="row">{{ number_format($Price_Symbol->quantity, 2) }}</td>
-                                <td scope="row">{{ number_format($Price_Symbol->purchase_amount, 1) }} $</td>
-                                <td scope="row" class="{{ $currentValueClass }}">{{ number_format($Price_Symbol->current_value, 1) }} $</td>
-                                <td scope="row">
-                                    <button type="button" class="btn btn-warning btn-sm"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#editModal"
-                                            data-id="{{ $Price_Symbol->id }}"
-                                            data-name="{{ $Price_Symbol->currency_name }}"
-                                            data-current-price="{{ $Price_Symbol->current_price }}"
-                                            data-average-buy-price="{{ $Price_Symbol->average_buy_price }}"
-                                            data-percentage-change="{{ $Price_Symbol->percentage_change }}"
-                                            data-quantity="{{ $Price_Symbol->quantity }}"
-                                            data-purchase-amount="{{ $Price_Symbol->purchase_amount }}"
-                                            data-current-value="{{ $Price_Symbol->current_value }}">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <!-- Button to trigger the delete modal -->
-                                    <form action="{{ route('price-symbols.destroy', $Price_Symbol->id) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal" data-id="{{ $Price_Symbol->id }}">
-                                            <i class="fas fa-trash-alt"></i>
+                                <tr>
+                                    <td>{{ $loop->iteration }}</td>
+                                    <td>{{ $Price_Symbol->currency_name }}USDT</td>
+                                    <td class="bg-info text-dark fw-bold">{{ number_format($Price_Symbol->current_price, 3) }} $</td>
+                                    <td>{{ number_format($Price_Symbol->average_buy_price, 3) }} $</td>
+                                    <td class="{{ $Price_Symbol->percentage_change >= 0 ? 'bg-success text-light' : 'bg-danger text-light' }}">{{ number_format($Price_Symbol->percentage_change, 2) }}%</td>
+                                    <td>{{ number_format($Price_Symbol->quantity, 2) }}</td>
+                                    <td>{{ number_format($Price_Symbol->purchase_amount, 1) }} $</td>
+                                    <td class="{{ $Price_Symbol->current_value >= $Price_Symbol->purchase_amount ? 'bg-success text-light' : 'bg-danger text-light fw-bold' }}">{{ number_format($Price_Symbol->current_value, 1) }} $</td>
+                                    <td>
+                                        <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-id="{{ $Price_Symbol->id }}" data-bs-target="#editModal">
+                                            <i class="fas fa-edit"></i>
                                         </button>
-                                    </form>
-                                </td>
-                            </tr>
+                                        <form action="{{ route('price-symbols.destroy', $Price_Symbol->id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal" data-id="{{ $Price_Symbol->id }}">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
                             @endforeach
                         </tbody>
                     </table>
@@ -103,8 +127,7 @@
         </div>
     </div>
 
-
-    <!-- Modal for Adding New Currency -->
+        <!-- Modal for Adding New Currency -->
     <div class="modal fade" id="createModal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -112,7 +135,7 @@
                     <h5 class="modal-title" id="createModalLabel">إضافة عملة جديدة</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="createForm" method="POST">
+                <form id="createForm" method="POST" action="{{ route('price-symbols.store') }}">
                     @csrf
                     <div class="modal-body">
                         <div class="row">
@@ -147,20 +170,20 @@
         </div>
     </div>
 
-    <!-- Modal for Editing Currency -->
+        <!-- Modal for Editing Currency -->
     <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="editModalLabel">تعديل عملة</h5>
+                    <h5 class="modal-title" id="editModalLabel">تعديل العملة</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="editForm" action="{{ route('price-symbols.update', 'placeholder') }}" method="POST">
+                <form id="editForm" method="POST" action="">
                     @csrf
                     @method('PUT')
-                    <input type="hidden" id="edit_id" name="id">
                     <div class="modal-body">
                         <div class="row">
+                            <input type="hidden" id="edit_id" name="id">
                             <div class="col-md-4 mb-3">
                                 <label for="edit_currency_name" class="form-label">اسم العملة</label>
                                 <input type="text" class="form-control" id="edit_currency_name" name="currency_name" required>
@@ -178,21 +201,21 @@
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="edit_purchase_amount" class="form-label">مبلغ الشراء</label>
-                                <input type="number" step="0.01" class="form-control" id="edit_purchase_amount" name="purchase_amount" required>
+                                <input type="number" step="0.01" class="form-control" id="edit_purchase_amount" name="purchase_amount">
                                 <span class="text-danger" id="edit_purchase_amount_error"></span>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                        <button type="submit" class="btn btn-warning">تحديث</button>
+                        <button type="submit" class="btn btn-primary">تحديث</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Modal for Deleting Currency -->
+        <!-- Modal for Deleting Currency -->
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -200,11 +223,11 @@
                     <h5 class="modal-title" id="deleteModalLabel">تأكيد الحذف</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="deleteForm" action="" method="POST">
+                <form id="deleteForm" method="POST" action="">
                     @csrf
                     @method('DELETE')
                     <div class="modal-body">
-                        هل أنت متأكد أنك تريد حذف هذه العملة؟ هذه العملية لا يمكن التراجع عنها.
+                        هل أنت متأكد أنك تريد حذف هذه العملة؟
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
@@ -214,206 +237,5 @@
             </div>
         </div>
     </div>
-
-
-    @section('script')
-
-        <!-- Include Bootstrap JS and jQuery -->
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
-        <!-- Toastr JS -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-
-        <script>
-            $(document).ready(function() {
-                function updatePrices() {
-                    $.ajax({
-                        url: "{{ url('/api/prices') }}",
-                        type: 'GET',
-                        success: function(response) {
-                            // تحديث البيانات في الصفحة
-                            $.each(response, function(symbol, price) {
-                                // تنسيق السعر إلى عدد معين من الخانات العشرية
-                                var formattedPrice = parseFloat(price).toFixed(3);
-
-                                $('tr').each(function() {
-                                    var rowSymbol = $(this).find('td.symbol').text().trim(); // تأكد من استخدام المعرف الصحيح
-                                    if (rowSymbol === symbol) {
-                                        $(this).find('td.price').text(formattedPrice);
-                                    }
-                                });
-                            });
-
-                            // تحديث الأسعار في قاعدة البيانات
-                            $.ajax({
-                                url: "{{ url('/api/update-prices') }}",
-                                type: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                                },
-                                data: { prices: response },
-                                success: function() {
-                                    console.log('Prices updated in the database');
-                                },
-                                error: function() {
-                                    console.log('Error updating prices in the database');
-                                }
-                            });
-                        },
-                        error: function() {
-                            console.log('Error fetching prices');
-                        }
-                    });
-                }
-
-                // تحديث الأسعار كل 30 ثانية (30000 مللي ثانية)
-                setInterval(updatePrices, 10000);
-
-                // تحديث الأسعار عند تحميل الصفحة لأول مرة
-                updatePrices();
-            });
-        </script>
-
-        <script>
-            // Refresh button click handler
-            $('#refreshButton').click(function() {
-                updatePrices();
-            });
-
-            // Function to update prices via AJAX
-            function updatePrices() {
-                $.ajax({
-                    url: "{{ url('/api/update-prices') }}",
-                    method: 'POST',
-                    data: {
-                        _token: '{{ csrf_token() }}' // CSRF token for security
-                    },
-                    success: function(response) {
-                        // Handle success response
-                        toastr.success('تم تحديث الأسعار بنجاح');
-                        // Optionally, you can update the UI with the new data
-                    },
-                    error: function(xhr) {
-                        // Handle error response
-                        toastr.error('حدث خطأ أثناء تحديث الأسعار');
-                    }
-                });
-            }
-        </script>
-
-        <script>
-            $(document).ready(function() {
-                $('#createForm').on('submit', function(e) {
-                    e.preventDefault(); // منع إرسال النموذج بالطريقة التقليدية
-
-                    $.ajax({
-                        url: "{{ route('price-symbols.store') }}",
-                        type: 'POST',
-                        data: $(this).serialize(),
-                        success: function(response) {
-                            // تخزين رسالة الإشعار في localStorage
-                            localStorage.setItem('toastrMessage', 'تم تحديث الأسعار بنجاح');
-
-                            // إغلاق الموديل وإعادة تحميل البيانات
-                            $('#createModal').modal('hide');
-                            location.reload(); // إعادة تحميل الصفحة
-                        },
-                        error: function(xhr) {
-                            // عرض الأخطاء داخل الموديل
-                            let errors = xhr.responseJSON.errors;
-                            $('.text-danger').text(''); // مسح الرسائل السابقة
-                            $.each(errors, function(key, value) {
-                                $('#' + key + '_error').text(value[0]); // عرض الرسالة المناسبة
-                            });
-                        }
-                    });
-                });
-
-                // عرض إشعار Toastr إذا كان هناك رسالة مخزنة
-                const toastrMessage = localStorage.getItem('toastrMessage');
-                if (toastrMessage) {
-                    toastr.success(toastrMessage);
-                    localStorage.removeItem('toastrMessage'); // إزالة الرسالة بعد عرضها
-                }
-            });
-        </script>
-
-        <script>
-            $(document).ready(function() {
-                $('#editModal').on('show.bs.modal', function (event) {
-                    var button = event.relatedTarget;
-                    var id = button.getAttribute('data-id');
-                    var form = $(this).find('form');
-
-                    if (form.length) {
-                        var action = form.attr('action');
-                        if (action) {
-                            form.attr('action', action.replace('placeholder', id));
-                        } else {
-                            console.error('Form action is not defined.');
-                        }
-                    } else {
-                        console.error('Form element is not found.');
-                    }
-
-                    $('#edit_currency_name').val(button.getAttribute('data-name'));
-                    $('#edit_current_price').val(button.getAttribute('data-current-price'));
-                    $('#edit_average_buy_price').val(button.getAttribute('data-average-buy-price'));
-                    $('#edit_percentage_change').val(button.getAttribute('data-percentage-change'));
-                    $('#edit_quantity').val(button.getAttribute('data-quantity'));
-                    $('#edit_purchase_amount').val(button.getAttribute('data-purchase-amount'));
-                    $('#edit_current_value').val(button.getAttribute('data-current-value'));
-                });
-
-                $('#editModal').find('form').on('submit', function(e) {
-                    e.preventDefault();
-
-                    $.ajax({
-                        url: $(this).attr('action'),
-                        type: 'POST',
-                        data: $(this).serialize(),
-                        success: function(response) {
-                            $('#editModal').modal('hide');
-                            location.reload();
-                        },
-                        error: function(xhr) {
-                            let errors = xhr.responseJSON.errors;
-                            $('.text-danger').text('');
-                            $.each(errors, function(key, value) {
-                                $('#' + key + '_error').text(value[0]);
-                            });
-                        }
-                    });
-                });
-            });
-        </script>
-
-        <script>
-            const deleteModal = document.getElementById('deleteModal');
-            deleteModal.addEventListener('show.bs.modal', event => {
-                const button = event.relatedTarget;
-                const id = button.getAttribute('data-id');
-                const form = deleteModal.querySelector('form');
-                form.action = `/price-symbols/${id}`;
-            });
-        </script>
-
-        <script>
-            $(document).ready(function() {
-                // عرض إشعار Toastr إذا كان هناك رسالة مخزنة
-                const toastrMessage = localStorage.getItem('toastrMessage');
-                if (toastrMessage) {
-                    toastr.success(toastrMessage);
-                    localStorage.removeItem('toastrMessage'); // إزالة الرسالة بعد عرضها
-                }
-            });
-        </script>
-
-        @if (session('success'))
-            <script>
-                toastr.success('{{ session('success') }}');
-            </script>
-        @endif
-
-    @endsection
 
 </div>

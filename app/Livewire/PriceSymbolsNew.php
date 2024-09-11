@@ -79,7 +79,9 @@ class PriceSymbolsNew extends Component
             $prices = $this->fetchPricesFromApi();
 
             // بث الأسعار المحدثة عبر WebSocket
-            event(new MyEvent('تحديث السعر الجديد'));
+            // event(new MyEvent('تحديث السعر الجديد'));
+            event(new MyEvent($prices));
+
 
             // الحصول على معلومات التنسيق من Binance
             $decimals = $this->getSymbolDecimals();
