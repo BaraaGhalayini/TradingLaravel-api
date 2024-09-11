@@ -32,7 +32,10 @@
                 text-align: center;
             }
         </style>
+
         @livewireStyles
+
+        @yield('script_head')
 
     </head>
     <body class="font-sans antialiased">

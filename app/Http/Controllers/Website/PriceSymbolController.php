@@ -158,12 +158,6 @@ class PriceSymbolController extends Controller
 
 
 
-
-    public function create()
-    {
-        return view('price-symbols.create');
-    }
-
     public function store(Request $request)
     {
         $request->validate([

@@ -18,9 +18,12 @@ use App\Livewire\PriceSymbolsNew;
 */
 
 // Route::get('/tradeingliveggggg', [PriceSymbolsNew::class])->name('tradeinglive2');
+
 Route::get('/tradeingliveggggg', function () {
     return view('dashboard-live');
 })->name('tradeingliveggggg');
+
+
 
 
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified', ])->group(function () {
