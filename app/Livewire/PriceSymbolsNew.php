@@ -18,6 +18,9 @@ class PriceSymbolsNew extends Component
     public $pricesSymbols;
     public $symbols;
     public $GetPrices;
+    public $totalCurrentValue;
+
+
 
     // تحديث البيانات كل فترة زمنية باستخدام WebSocket
     protected $listeners = ['priceUpdated' => 'updatePrices'];
@@ -25,6 +28,8 @@ class PriceSymbolsNew extends Component
     public function mount()
     {
         $this->GetPrices();
+        $this->totalCurrentValue = PriceSymbol::sum('current_value');
+
     }
 
     public function GetPrices()
@@ -40,7 +45,10 @@ class PriceSymbolsNew extends Component
 
         foreach ($Price_Symbols as $symbol) {
             $formattedSymbol = strtoupper($symbol) . 'USDT';
-            $response = Http::get("https://api.binance.com/api/v3/ticker/price?symbol=$formattedSymbol");
+            $response = Http::timeout(10)->get("https://api.binance.com/api/v3/ticker/price?symbol=$formattedSymbol");
+            if (!$response->successful()) {
+                throw new \Exception("Failed to fetch prices from API.");
+            }
             if ($response->successful()) {
                 $data = $response->json();
                 if (isset($data['price'])) {
@@ -147,7 +155,32 @@ class PriceSymbolsNew extends Component
         }
     }
 
-    #[Layout('dashboard-live')]
+    public function deleteSymbol($id)
+    {
+        try {
+            // العثور على العملة باستخدام الـ ID وحذفها
+            $priceSymbol = PriceSymbol::findOrFail($id);
+            $priceSymbol->delete();
+
+            // إعادة تحميل البيانات المحدثة بعد الحذف
+            $this->GetPrices();
+
+            // إرجاع رسالة نجاح بعد الحذف
+            session()->flash('success', 'تم حذف العملة بنجاح');
+        } catch (\Exception $e) {
+            // تسجيل الخطأ وإرجاع رسالة خطأ
+            Log::error("Error deleting price symbol: " . $e->getMessage());
+            session()->flash('error', 'حدث خطأ أثناء محاولة حذف العملة');
+        }
+    }
+
+    public function closeModal()
+{
+    $this->resetForm();
+}
+
+
+    #[Layout('layouts.app')]
     public function render(): View|Application|Factory
     {
         return view('livewire.price-symbols-new');

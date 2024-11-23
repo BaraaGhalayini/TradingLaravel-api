@@ -74,12 +74,15 @@
                                 <tr>
                                     <td scope="row">{{ $loop->iteration }}</td>
                                     <td scope="row" class="symbol ">{{ $Price_Symbol->currency_name }}USDT</td>
-                                    <td scope="row" class="{{ $currentPriceClass }}"> {{ number_format($Price_Symbol->current_price, 3) }} $</td>
+                                    <td scope="row" class="{{ $currentPriceClass }}">
+                                        {{ number_format($Price_Symbol->current_price, 3) }} $</td>
                                     <td scope="row">{{ number_format($Price_Symbol->average_buy_price, 3) }} $</td>
-                                    <td scope="row" class="{{ $percentageChangeClass }}"> {{ number_format($percentageChange, 2) }}%</td>
+                                    <td scope="row" class="{{ $percentageChangeClass }}">
+                                        {{ number_format($percentageChange, 2) }}%</td>
                                     <td scope="row">{{ number_format($Price_Symbol->quantity, 2) }}</td>
                                     <td scope="row">{{ number_format($Price_Symbol->purchase_amount, 1) }} $</td>
-                                    <td scope="row" class="{{ $currentValueClass }}"> {{ number_format($Price_Symbol->current_value, 1) }} $</td>
+                                    <td scope="row" class="{{ $currentValueClass }}">
+                                        {{ number_format($Price_Symbol->current_value, 1) }} $</td>
                                     <td scope="row">
                                         <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
                                             data-bs-target="#editModal" data-id="{{ $Price_Symbol->id }}"
@@ -93,11 +96,7 @@
                                             <i class="fas fa-edit"></i>
                                         </button>
                                         <!-- Button to trigger the delete modal -->
-                                        <button type="button" wire:click="deleteSymbol({{ $Price_Symbol->id }})" class="btn btn-danger btn-sm" >
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-
-                                        {{-- <form action="{{ route('price-symbols.destroy', $Price_Symbol->id) }}"
+                                        <form action="{{ route('price-symbols.destroy', $Price_Symbol->id) }}"
                                             method="POST" class="d-inline">
                                             @csrf
                                             @method('DELETE')
@@ -105,7 +104,7 @@
                                                 data-bs-target="#deleteModal" data-id="{{ $Price_Symbol->id }}">
                                                 <i class="fas fa-trash-alt"></i>
                                             </button>
-                                        </form> --}}
+                                        </form>
                                     </td>
                                 </tr>
                             @endforeach
@@ -127,6 +126,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
     <script src="{{ asset('build/assets/script.js') }}" crossorigin="anonymous"></script>
+
 
     @if (session('success'))
         <script>

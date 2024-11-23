@@ -31,3 +31,7 @@ Route::get('/login', [LoginController::class , 'login']);
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+
+Broadcast::routes(['middleware' => ['auth:api']]);
+

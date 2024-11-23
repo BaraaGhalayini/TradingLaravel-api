@@ -5,6 +5,7 @@ use App\Http\Controllers\Website\CurrencieController;
 use App\Http\Controllers\Website\PriceSymbolController;
 // use App\Livewire\PriceSymbols;
 use App\Livewire\PriceSymbolsNew;
+use App\Livewire\NewPriceSymbols;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,27 +20,30 @@ use App\Livewire\PriceSymbolsNew;
 
 // Route::get('/tradeingliveggggg', [PriceSymbolsNew::class])->name('tradeinglive2');
 
-Route::get('/tradeingliveggggg', function () {
-    return view('dashboard-live');
-})->name('tradeingliveggggg');
+// Route::get('/tradeinglive', function () { return view('dashboard-live'); })->name('tradeinglive');
 
+// Route::get('/dashboard-live', [PriceSymbolsNew::class])->name('dashboard'); // live
 
 
 
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified', ])->group(function () {
 
-    Route::get('/dashboard', [PriceSymbolController::class , 'index'])->name('dashboard');
-    Route::get('/', [PriceSymbolController::class , 'index']);
+
+    Route::get('/', PriceSymbolsNew::class)->name('dashboard'); // live
+    Route::get('/dashboard-live', NewPriceSymbols::class)->name('dashboard2'); // live
+    // Route::get('/dashboard-live', PriceSymbolsNew::class)->name('dashboard'); // live
+
+
+    // Route::get('/dashboard', [PriceSymbolController::class , 'index'])->name('dashboard');
+    // Route::get('/', [PriceSymbolController::class , 'index']);
     Route::get('/tradeing', [CurrencieController::class , 'index'])->name('tradeing');
 
-    Route::resource('price-symbols', PriceSymbolController::class);
+    // Route::resource('price-symbols', PriceSymbolController::class);
 
-    Route::get('/api/prices', [PriceSymbolController::class, 'getPrices'])->name('prices.api');
-    Route::post('/api/update-prices', [PriceSymbolController::class, 'updatePrices']);
-
+    // Route::get('/api/prices', [PriceSymbolController::class, 'getPrices'])->name('prices.api');
+    // Route::post('/api/update-prices', [PriceSymbolController::class, 'updatePrices']);
 
     // Route::get('/tradeinglive', [PriceSymbols::class])->name('tradeinglive');
-
 
 
 });

@@ -20,6 +20,7 @@
                 <div class="d-flex justify-content-between align-items-center p-3">
                     <h3>إدارة العملات الرقمية</h3>
                     <div class="d-flex">
+
                         <!-- Add New Currency Button -->
                         <a href="#" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#createModal">
                             <i class="fas fa-plus-circle"></i> إضافة عملة جديدة

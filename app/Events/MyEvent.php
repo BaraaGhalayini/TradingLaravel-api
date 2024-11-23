@@ -24,12 +24,18 @@ class MyEvent
 
     public function broadcastOn()
     {
-        return ['my-channel'];
+        return new Channel('my-channel');
     }
+
 
     public function broadcastAs()
     {
-        return 'my-event';
+        return 'priceUpdated';
+
     }
 
+    public function broadcastWith()
+    {
+        return ['prices' => $this->message]; // البيانات المرسلة مع الحدث
+    }
 }

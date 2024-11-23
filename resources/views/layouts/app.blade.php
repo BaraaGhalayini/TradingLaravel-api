@@ -35,7 +35,7 @@
 
         @livewireStyles
 
-        @yield('script_head')
+        @stack('script_head')
 
     </head>
     <body class="font-sans antialiased">
@@ -62,6 +62,7 @@
         @stack('modals')
 
         @livewireScripts
+        @stack('script')
 
 
 
