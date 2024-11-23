@@ -40,11 +40,12 @@
         }
     }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="d-flex justify-content-between align-items-center p-3">
-                    <h3>إدارة العملات الرقمية</h3>
-                    <div class="d-flex">
-                        <h6> الرصيد الحالي : </h6> {{ $totalCurrentValue }}
+            <div class="bg-white shadow-md rounded-lg">
+                <div class="flex justify-between items-center p-6">
+                    <h3 class="text-xl font-bold text-gray-800">إدارة العملات الرقمية</h3>
+                    <div class="flex space-x-4 rtl:space-x-reverse">
+                        <h6 class="text-gray-600 font-medium">الرصيد الحالي:</h6>
+                        <span class="text-lg font-semibold text-gray-800">{{ $totalCurrentValue }}</span>
 
                         <!-- Add New Currency Button -->
                         <button @click="createModal = true"
@@ -54,83 +55,68 @@
                         </button>
 
                         <!-- Refresh Button -->
-                        <button type="button" class="btn btn-warning" wire:click="updatePricesManually">
+                        <button type="button" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
+                            wire:click="updatePricesManually">
                             تحديث يدوي
                         </button>
 
-                        <button type="button" class="btn btn-primary" wire:click="broadcastTest">
+                        <button type="button" class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+                            wire:click="broadcastTest">
                             بث البيانات يدويًا
                         </button>
-
-
                     </div>
                 </div>
 
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover table-center">
-                        <thead>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white border border-gray-200 text-sm text-gray-600">
+                        <thead class="bg-gray-100 text-gray-700 uppercase text-xs font-semibold">
                             <tr>
-                                <th scope="col"><i class="fas fa-hashtag"></i></th> <!-- رقم -->
-                                <th scope="col"><i class="fas fa-coins"></i> اسم العملة</th> <!-- اسم العملة -->
-                                <th scope="col"><i class="fas fa-dollar-sign"></i> السعر الحالي</th>
-                                <!-- السعر الحالي -->
-                                <th scope="col"><i class="fas fa-chart-line"></i> متوسط سعر الشراء</th>
-                                <!-- متوسط سعر الشراء -->
-                                <th scope="col"><i class="fas fa-percentage"></i> نسبة التغير</th>
-                                <!-- نسبة التغير -->
-                                <th scope="col"><i class="fas fa-boxes"></i> الكمية التي تم شراؤها</th>
-                                <!-- الكمية التي تم شراؤها -->
-                                <th scope="col"><i class="fas fa-wallet"></i> مبلغ الشراء</th> <!-- مبلغ الشراء -->
-                                <th scope="col"><i class="fas fa-money-bill-wave"></i> قيمة المبلغ الآن</th>
-                                <!-- قيمة المبلغ الآن -->
-                                <th scope="col"><i class="fas fa-cogs"></i> إجراءات</th>
-                                <!-- العمود لإظهار أزرار التعديل والحذف -->
+                                <th class="py-3 px-4 border-b">#</th>
+                                <th class="py-3 px-4 border-b">اسم العملة</th>
+                                <th class="py-3 px-4 border-b">السعر الحالي</th>
+                                <th class="py-3 px-4 border-b">متوسط سعر الشراء</th>
+                                <th class="py-3 px-4 border-b">نسبة التغير</th>
+                                <th class="py-3 px-4 border-b">الكمية التي تم شراؤها</th>
+                                <th class="py-3 px-4 border-b">مبلغ الشراء</th>
+                                <th class="py-3 px-4 border-b">قيمة المبلغ الآن</th>
+                                <th class="py-3 px-4 border-b">إجراءات</th>
                             </tr>
                         </thead>
-
-                        <tbody id="pricesTableBody">
+                        <tbody>
                             @foreach ($pricesSymbols as $Price_Symbol)
                                 @php
                                     $percentageChange = $Price_Symbol->percentage_change;
                                     $percentageChangeClass =
-                                        $percentageChange >= 0 ? 'bg-success text-light' : 'bg-danger text-light';
-                                    $currentPriceClass = 'bg-info text-dark fw-bold';
-                                    // $currentValueClass = 'bg-primary text-light';
+                                        $percentageChange >= 0
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-red-100 text-red-800';
+                                    $currentPriceClass = 'bg-blue-100 text-blue-800 font-semibold';
                                     $currentValueClass =
                                         $Price_Symbol->current_value >= $Price_Symbol->purchase_amount
-                                            ? 'bg-success text-light'
-                                            : 'bg-danger text-light fw-bold';
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-red-100 text-red-800 font-semibold';
                                 @endphp
-                                <tr>
-                                    <td scope="row">{{ $loop->iteration }}</td>
-                                    <td scope="row" class="symbol ">{{ $Price_Symbol->currency_name }}USDT</td>
-                                    <td scope="row" class="{{ $currentPriceClass }}">
-                                        {{ number_format($Price_Symbol->current_price ?? 0, 3) }} $</td>
-                                    <td scope="row">{{ number_format($Price_Symbol->average_buy_price, 3) }} $</td>
-                                    <td scope="row" class="{{ $percentageChangeClass }}">
-                                        {{ number_format($Price_Symbol->percentage_change ?? 0, 2) }}%
-                                    </td>
-                                    <td scope="row">{{ number_format($Price_Symbol->quantity, 2) }}</td>
-                                    <td scope="row">{{ number_format($Price_Symbol->purchase_amount, 1) }} $</td>
-                                    <td scope="row" class="{{ $currentValueClass }}">
-                                        {{ number_format($Price_Symbol->current_value, 1) }} $</td>
-                                    <td scope="row">
+                                <tr class="border-b text-center">
+                                    <td class="py-3 px-4">{{ $loop->iteration }}</td>
+                                    <td class="py-3 px-4">{{ $Price_Symbol->currency_name }}USDT</td>
+                                    <td class="py-3 px-4 {{ $currentPriceClass }}"> {{ number_format($Price_Symbol->current_price ?? 0, 3) }} $</td>
+                                    <td class="py-3 px-4">{{ number_format($Price_Symbol->average_buy_price, 3) }} $</td>
+                                    <td class="py-3 px-4 font-black text-lg {{ $percentageChangeClass }}">{{ number_format($Price_Symbol->percentage_change ?? 0, 1) }}%</td>
+                                    <td class="py-3 px-4">{{ number_format($Price_Symbol->quantity, 2) }}</td>
+                                    <td class="py-3 px-4">{{ number_format($Price_Symbol->purchase_amount, 1) }} $</td>
+                                    <td class="py-3 px-4 font-black {{ $currentValueClass }}">{{ number_format($Price_Symbol->current_value, 0) }} $</td>
+                                    <td class="py-3 px-4 flex space-x-2 rtl:space-x-reverse">
                                         <!-- Edit Currency Button -->
-                                        <button wire:click="editCurrency({{ $Price_Symbol->id }})"
+                                        <button wire:click="editCurrencyR({{ $Price_Symbol->id }})"
                                             @click="editModal = true"
                                             class="px-3 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 flex items-center space-x-2 text-sm">
                                             <i class="fas fa-edit"></i>
-                                            {{-- <span>تعديل</span> --}}
                                         </button>
-
                                         <!-- Delete Currency Button -->
                                         <button wire:click="confirmDelete({{ $Price_Symbol->id }})"
                                             @click="deleteModal = true"
-                                            class="px-3
-                                            py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center
-                                            space-x-2 text-sm">
+                                            class="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center space-x-2 text-sm">
                                             <i class="fas fa-trash-alt"></i>
-                                            {{-- <span>حذف</span> --}}
                                         </button>
                                     </td>
                                 </tr>
@@ -138,36 +124,30 @@
                         </tbody>
                     </table>
                 </div>
-
             </div>
         </div>
         @include('models.modals')
     </div>
-</div>
+    <
 
+</div>
 
 @push('script')
     <!-- Include Bootstrap JS and jQuery -->
-    {{-- <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script> --}}
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <!-- Toastr JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
     <script>
-        // عرض رسالة مخزنة في localStorage باستخدام Toastr
         $(document).ready(function() {
-            const toastrMessage = localStorage.getItem('toastrMessage');
-            if (toastrMessage) {
-                toastr.success(toastrMessage);
-                localStorage.removeItem('toastrMessage'); // إزالة الرسالة بعد عرضها
-            }
+            @if (session('success'))
+                toastr.success("{{ session('success') }}");
+            @endif
+            @if (session('error'))
+                toastr.error("{{ session('error') }}");
+            @endif
         });
-
-        // Livewire.on('close-modal', () => {
-        //     document.querySelector('[x-data]').__x.$data.editModal = false;
-        // });
-
 
         // الاستماع للحدث priceUpdated من Pusher وتحديث Livewire
         Livewire.on('priceUpdated', (prices) => {
@@ -184,13 +164,6 @@
 
             toastr.success('تم تحديث الأسعار بنجاح!');
         });
-
-        // إظهار إشعارات بناءً على جلسة Laravel
-        @if (session('success'))
-            toastr.success('{{ session('success') }}');
-        @endif
-        @if (session('error'))
-            toastr.error('{{ session('error') }}');
-        @endif
     </script>
 @endpush
+

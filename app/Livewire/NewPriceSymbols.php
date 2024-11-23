@@ -22,6 +22,7 @@ class NewPriceSymbols extends Component
     public $GetPrices;
     public $totalCurrentValue;
 
+
     public $newCurrency = [
         'currency_name' => '',
         'average_buy_price' => 0,
@@ -44,9 +45,25 @@ class NewPriceSymbols extends Component
     public function mount()
     {
         // $this->mount();
-        $this->pricesSymbols = PriceSymbol::all();
+        // $this->pricesSymbols = PriceSymbol::orderBy('current_value', 'desc')->get();
+        // $this->pricesSymbols = PriceSymbol::get()->sortBy('current_value');
+        $this->pricesSymbols = PriceSymbol::orderBy('percentage_change', 'desc')
+                                            ->orderBy('current_value', 'desc')
+                                            ->get();
+
+
         $this->totalCurrentValue = PriceSymbol::sum('current_value');
     }
+
+    public function getCalculatedValueProperty()
+    {
+        $averageBuyPrice = $this->newCurrency['average_buy_price'] ?? 0;
+        $quantity = $this->newCurrency['quantity'] ?? 0;
+
+        return $averageBuyPrice * $quantity;
+    }
+
+
 
     public function resetForm()
     {
@@ -124,8 +141,6 @@ class NewPriceSymbols extends Component
         $this->totalCurrentValue = PriceSymbol::sum('current_value'); // تحديث القيمة الإجمالية
     }
 
-
-
     public function updateRow($symbol, $price)
     {
         $currency = PriceSymbol::where('currency_name', $symbol)->first();
@@ -134,7 +149,6 @@ class NewPriceSymbols extends Component
         }
         $this->pricesSymbols = PriceSymbol::all(); // تحديث البيانات
     }
-
 
     public function updatePrices()
     {
@@ -191,10 +205,7 @@ class NewPriceSymbols extends Component
         }
     }
 
-
     // New jobs
-
-
     public function broadcastTest()
     {
         $prices = PriceSymbol::pluck('current_price', 'currency_name')->toArray();
@@ -228,7 +239,7 @@ class NewPriceSymbols extends Component
         session()->flash('error', 'حدث خطأ أثناء تحديث البيانات.');
     }
 
-    public function editCurrency($id)
+    public function editCurrencyR($id)
     {
         $currency = PriceSymbol::find($id);
         if ($currency) {
@@ -243,8 +254,8 @@ class NewPriceSymbols extends Component
     {
         $this->validate([
             'editCurrency.currency_name' => 'required|string|max:255',
-            'editCurrency.average_buy_price' => 'required|numeric|min:0',
-            'editCurrency.quantity' => 'required|numeric|min:0',
+            'editCurrency.average_buy_price' => 'required|numeric',
+            'editCurrency.quantity' => 'required|numeric',
         ]);
 
         $currency = PriceSymbol::findOrFail($this->editCurrency['id']);
@@ -257,10 +268,10 @@ class NewPriceSymbols extends Component
             'purchase_amount' => $purchaseAmount,
         ]);
 
+        session()->flash('success', 'تم تعديل العملة بنجاح!');
         $this->mount();
         $this->dispatch('close-modal');
         $this->reset('editCurrency'); // إعادة تعيين الخاصية
-        session()->flash('success', 'تم تعديل العملة بنجاح!');
     }
 
     public function confirmDelete($id)

@@ -29,8 +29,8 @@ use App\Livewire\NewPriceSymbols;
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified', ])->group(function () {
 
 
-    Route::get('/', PriceSymbolsNew::class)->name('dashboard'); // live
-    Route::get('/dashboard-live', NewPriceSymbols::class)->name('dashboard2'); // live
+    Route::get('/dashboard-live', PriceSymbolsNew::class)->name('dashboard'); // live
+    Route::get('/', NewPriceSymbols::class)->name('dashboard2'); // live
     // Route::get('/dashboard-live', PriceSymbolsNew::class)->name('dashboard'); // live
 
 
