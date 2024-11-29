@@ -73,7 +73,7 @@ class NewPriceSymbols extends Component
     public function updatePricesManually()
     {
         $this->updatePrices();
-        session()->flash('success', 'تم تحديث الأسعار يدويًا!');
+        $this->dispatch('closeLoading', message:'تم تحديث الأسعار يدويًا!');// إخفاء التحميل + اشعار
     }
 
 
@@ -210,7 +210,7 @@ class NewPriceSymbols extends Component
     {
         $prices = PriceSymbol::pluck('current_price', 'currency_name')->toArray();
         event(new MyEvent($prices));
-        session()->flash('success', 'تم بث البيانات بنجاح!');
+        $this->dispatch('success-message', message:'تم بث البيانات بنجاح!');
     }
 
 
@@ -218,11 +218,11 @@ class NewPriceSymbols extends Component
     {
         $this->validate([
             'newCurrency.currency_name' => 'required|string|max:255',
-            'newCurrency.average_buy_price' => 'required|numeric|min:0',
-            'newCurrency.quantity' => 'required|numeric|min:0',
+            'newCurrency.average_buy_price' => 'required|numeric',
+            'newCurrency.quantity' => 'required|numeric',
         ]);
 
-        PriceSymbol::create([
+        $currency = PriceSymbol::create([
             'currency_name' => $this->newCurrency['currency_name'],
             'average_buy_price' => $this->newCurrency['average_buy_price'],
             'quantity' => $this->newCurrency['quantity'],
@@ -233,10 +233,10 @@ class NewPriceSymbols extends Component
         ]);
 
         $this->mount();
-        $this->dispatch('close-modal');
         $this->reset('newCurrency');
-        session()->flash('success', 'تمت إضافة العملة بنجاح!');
-        session()->flash('error', 'حدث خطأ أثناء تحديث البيانات.');
+        $this->dispatch('close-modal');
+        $this->dispatch('currency-added', id:$currency->id);
+        $this->dispatch('success-message', message:'تم إضافة العملة بنجاح!');
     }
 
     public function editCurrencyR($id)
@@ -245,7 +245,7 @@ class NewPriceSymbols extends Component
         if ($currency) {
             $this->editCurrency = $currency->toArray(); // تحويل الكائن إلى مصفوفة
         } else {
-            session()->flash('error', 'العملة غير موجودة.');
+            $this->dispatch('error-message', message:'العملة غير موجودة');
         }
     }
 
@@ -268,8 +268,8 @@ class NewPriceSymbols extends Component
             'purchase_amount' => $purchaseAmount,
         ]);
 
-        session()->flash('success', 'تم تعديل العملة بنجاح!');
         $this->mount();
+        $this->dispatch('success-message', message:'تم تعديل العملة بنجاح');
         $this->dispatch('close-modal');
         $this->reset('editCurrency'); // إعادة تعيين الخاصية
     }
@@ -286,10 +286,10 @@ class NewPriceSymbols extends Component
             $this->reset('deleteId'); // إعادة تعيين المعرف
             $this->dispatch('close-modal');
             $this->mount();
-
-            session()->flash('success', 'تم حذف العملة بنجاح!');
+            $this->dispatch('success-message', message:'تم حذف العملة بنجاح');
+            $this->dispatch('currency-deleted', id:$currency->deleteId);
         } else {
-            session()->flash('error', 'العملة غير موجودة.');
+            $this->dispatch('error-message', message:'العملة غير موجودة');
         }
     }
 
