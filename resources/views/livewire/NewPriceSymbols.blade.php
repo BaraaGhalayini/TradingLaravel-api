@@ -84,7 +84,6 @@
                             class="text-lg font-semibold text-gray-800">{{ number_format($totalCurrentValue ?? 0, 0) }}
                             $</span>
 
-
                         <!-- Add New Currency Button -->
                         <button @click="createModal = true"
                             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2">
@@ -124,14 +123,27 @@
                             @foreach ($pricesSymbols as $Price_Symbol)
                                 @php
                                     $percentageChange = $Price_Symbol->percentage_change;
-                                    $percentageChangeClass =
-                                        $percentageChange >= 0
-                                            ? 'bg-green-100 text-green-800'
-                                            : 'bg-red-100 text-red-800';
+
+                                    if ($percentageChange >= 0 && $percentageChange < 50) {
+                                        $percentageChangeClass = 'bg-green-100 text-green-800';
+                                    }
+                                    elseif ($percentageChange >= 50 && $percentageChange < 100) {
+                                        $percentageChangeClass = 'bg-green-200 text-green-800';
+                                    }
+                                    elseif ($percentageChange >= 100 && $percentageChange < 300) {
+                                        $percentageChangeClass = 'bg-green-300 text-green-800';
+                                    }
+                                    elseif ($percentageChange >= 300) {
+                                        $percentageChangeClass = 'bg-green-500 text-green-800';
+                                    }
+                                    else {
+                                        $percentageChangeClass = 'bg-red-100 text-red-800';
+                                    }
+
                                     $currentPriceClass = 'bg-blue-100 text-blue-800 font-semibold';
                                     $currentValueClass =
                                         $Price_Symbol->current_value >= $Price_Symbol->purchase_amount
-                                            ? 'bg-green-100 text-green-800'
+                                            ? 'bg-green-100 text-green-800 font-semibold'
                                             : 'bg-red-100 text-red-800 font-semibold';
                                 @endphp
                                 <tr class="border-b text-center" x-data="{ visible: true }" x-show="visible"

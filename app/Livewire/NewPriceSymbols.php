@@ -46,9 +46,9 @@ class NewPriceSymbols extends Component
     {
         // $this->mount();
         // $this->pricesSymbols = PriceSymbol::orderBy('current_value', 'desc')->get();
-        // $this->pricesSymbols = PriceSymbol::get()->sortBy('current_value');
-        $this->pricesSymbols = PriceSymbol::orderBy('percentage_change', 'desc')
-                                            ->orderBy('current_value', 'desc')
+        // $this->pricesSymbols = PriceSymbol::get()->sortBy('current_value'); percentage_change
+        $this->pricesSymbols = PriceSymbol::orderBy('current_value', 'desc')
+                                            // ->orderBy('current_value', 'desc')
                                             ->get();
 
 
