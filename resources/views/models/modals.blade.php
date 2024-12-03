@@ -15,7 +15,8 @@
                     <input type="text" id="currencyName"
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
                         wire:model.live="newCurrency.currency_name">
-                    @error('newCurrency.currency_name')
+                    @error('newCurrency.
+                    ')
                         <span class="text-red-500 text-sm">{{ $message }}</span>
                     @enderror
                 </div>

@@ -5,72 +5,38 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\PriceSymbol;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Contracts\View\Factory;
-use Illuminate\Contracts\View\View;
-use Livewire\Attributes\Layout;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Log;
 use App\Events\MyEvent;
-use Illuminate\Support\Facades\Cache;
-
+use Livewire\Attributes\Layout;
 
 class NewPriceSymbols extends Component
 {
-
-    public $pricesSymbols;
-    public $symbols;
-    public $GetPrices;
-    public $totalCurrentValue;
-    public $totalPurchaseAmount;
-    public $totalAfterSell;
-
-    public $sortField = 'current_value'; // الحقل الافتراضي للترتيب
-    public $sortDirection = 'desc'; // الاتجاه الافتراضي للترتيب
-    public $newCurrency = [
-        'currency_name' => '',
-        'average_buy_price' => 0,
-        'quantity' => 0,
-    ];
-
+    public $pricesSymbols, $totalCurrentValue, $totalPurchaseAmount, $totalAfterSell;
+    public $sortField = 'current_value', $sortDirection = 'desc';
+    public $newCurrency = ['currency_name' => '', 'average_buy_price' => 0, 'quantity' => 0];
     public $editCurrency = [];
+    public $deleteId;
 
-
-    public $deleteId = null; // لتخزين المعرف المراد حذفه
-
-
-    // تحديث البيانات كل فترة زمنية باستخدام WebSocket
-    protected $listeners = [
-        'priceUpdated' => 'priceUpdated',
-        'resetForm' => 'resetForm',
-    ];
-
+    protected $listeners = ['priceUpdated' => 'priceUpdated', 'resetForm' => 'resetForm'];
 
     public function mount()
     {
-        // $this->mount();
-        // $this->pricesSymbols = PriceSymbol::orderBy('current_value', 'desc')->get();
-        // $this->pricesSymbols = PriceSymbol::get()->sortBy('current_value'); percentage_change
-        $this->pricesSymbols = PriceSymbol::orderBy('current_value', 'desc')
-                                            // ->orderBy('percentage_change', 'desc')
-                                            ->get();
+        $this->refreshTotals();
+    }
 
-
+    private function refreshTotals()
+    {
+        $this->pricesSymbols = PriceSymbol::orderBy($this->sortField, $this->sortDirection)->get();
         $this->totalCurrentValue = PriceSymbol::sum('current_value');
         $this->totalPurchaseAmount = PriceSymbol::sum('purchase_amount');
         $this->totalAfterSell = PriceSymbol::sum('afterSell');
     }
 
-
     public function sortBy($field)
     {
-        if ($this->sortField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortField = $field;
-            $this->sortDirection = 'asc';
-        }
-
-        $this->pricesSymbols = PriceSymbol::orderBy($this->sortField, $this->sortDirection)->get();
+        $this->sortDirection = $this->sortField === $field && $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        $this->sortField = $field;
+        $this->refreshTotals();
     }
 
     public function getCalculatedValueProperty()
@@ -81,155 +47,82 @@ class NewPriceSymbols extends Component
         return $averageBuyPrice * $quantity;
     }
 
-
-
     public function resetForm()
     {
         $this->reset(['newCurrency', 'editCurrency']);
     }
 
-    public function updatePricesManually()
-    {
-        $this->updatePrices();
-        $this->dispatch('closeLoading', message:'تم تحديث الأسعار يدويًا!');// إخفاء التحميل + اشعار
-    }
-
-
-    private function fetchPricesFromApi()
-    {
-        $decimals = $this->getSymbolDecimals();
-        $Price_Symbols = PriceSymbol::pluck('currency_name');
-        $prices = [];
-
-        return Cache::remember('prices_data', now()->addMinutes(5), function () use ($Price_Symbols, $decimals) {
-            $prices = [];
-
-            foreach ($Price_Symbols as $symbol) {
-                $formattedSymbol = strtoupper($symbol) . 'USDT';
-                $response = Http::timeout(10)->get("https://api.binance.com/api/v3/ticker/price?symbol=$formattedSymbol");
-                if ($response->successful() && isset($response['price'])) {
-                    $price = (float) $response['price'];
-                    $decimalInfo = $decimals[$formattedSymbol] ?? ['price' => 3];
-                    $formattedPrice = number_format($price, $decimalInfo['price'], '.', '');
-                    $prices[$formattedSymbol] = $formattedPrice;
-                }
-            }
-
-            return $prices;
-        });
-
-
-        return $prices;
-    }
-
-    private function getSymbolDecimals()
-    {
-        $response = Http::get('https://api.binance.com/api/v3/exchangeInfo');
-        $data = $response->json();
-        $symbols = $data['symbols'];
-        $decimals = [];
-
-        foreach ($symbols as $symbol) {
-            $decimals[$symbol['symbol']] = [
-                'price' => $symbol['quotePrecision'],
-                'quantity' => $symbol['baseAssetPrecision'],
-            ];
-        }
-
-        return $decimals;
-    }
-
-    public function priceUpdated($data)
-    {
-        if (!isset($data) || !is_array($data)) {
-            Log::error('Invalid data received for priceUpdated', $data);
-            return;
-        }
-
-        foreach ($data as $symbol => $price) {
-            $currencyName = strtolower(substr($symbol, 0, -4));
-            $priceSymbol = PriceSymbol::where('currency_name', $currencyName)->first();
-
-            if ($priceSymbol) {
-                $priceSymbol->update(['current_price' => $price]);
-            }
-        }
-
-        $this->pricesSymbols = PriceSymbol::all(); // تحديث العرض
-        $this->totalCurrentValue = PriceSymbol::sum('current_value'); // تحديث القيمة الإجمالية
-    }
-
-    public function updateRow($symbol, $price)
-    {
-        $currency = PriceSymbol::where('currency_name', $symbol)->first();
-        if ($currency) {
-            $currency->update(['current_price' => $price]);
-        }
-        $this->pricesSymbols = PriceSymbol::all(); // تحديث البيانات
-    }
-
     public function updatePrices()
     {
-        try {
-            // استدعاء API لجلب الأسعار
-            $prices = $this->fetchPricesFromApi();
+        $prices = $this->fetchAllPrices();
+        // dd($prices);
+        foreach ($prices as $currencyName => $price) {
+            $priceSymbol = PriceSymbol::where('currency_name', $currencyName)->first();
+            if ($priceSymbol) {
+                $currentPrice = (float)$price;
+                $averageBuyPrice = $priceSymbol->average_buy_price;
+                $quantity = $priceSymbol->quantity;
 
-            // بث الأسعار المحدثة عبر WebSocket
-            // event(new MyEvent('تحديث السعر الجديد'));
-            event(new MyEvent($prices)); // $prices يجب أن يكون مصفوفة
+                // العمليات الحسابية
+                $percentageChange = ($averageBuyPrice > 0)
+                    ? (($currentPrice - $averageBuyPrice) / $averageBuyPrice) * 100
+                    : 0;
 
 
-            // الحصول على معلومات التنسيق من Binance
-            $decimals = $this->getSymbolDecimals();
-
-            // تحديث كل سعر في قاعدة البيانات
-            foreach ($prices as $symbol => $price) {
-                $currencyName = strtolower(substr($symbol, 0, -4));
-
-                $priceSymbol = PriceSymbol::where('currency_name', $currencyName)->first();
-
-                if ($priceSymbol) {
-                    // الحصول على عدد الخانات العشرية
-                    $decimalInfo = $decimals[$symbol] ?? ['price' => 3, 'quantity' => 3];
-
-                    $currentPrice = (float) $price;
-                    $averageBuyPrice = $priceSymbol->average_buy_price;
-                    $quantity = $priceSymbol->quantity;
-
-                    $percentageChange = ($averageBuyPrice > 0) ? (($currentPrice - $averageBuyPrice) / $averageBuyPrice) * 100 : 0;
-                    $currentValue = $quantity * $currentPrice;
-                    $purchaseAmount = $quantity * $averageBuyPrice;
-
-                    // تنسيق القيم بناءً على عدد الخانات العشرية
-                    $currentPrice = number_format($currentPrice, $decimalInfo['price'], '.', '');
-                    $percentageChange = number_format($percentageChange, 3, '.', '');
-                    $currentValue = number_format($currentValue, $decimalInfo['price'], '.', '');
-                    $purchaseAmount = number_format($purchaseAmount, $decimalInfo['price'], '.', '');
-
-                    // تحديث المعلومات في قاعدة البيانات
-                    $priceSymbol->update([
-                        'current_price' => $currentPrice,
-                        'percentage_change' => $percentageChange,
-                        'current_value' => $currentValue,
-                        'purchase_amount' => $purchaseAmount,
-                    ]);
-                }
+                // تحديث الحقول في قاعدة البيانات
+                $priceSymbol->update([
+                    'current_price' => $currentPrice,
+                    'percentage_change' => $percentageChange,
+                    'current_value' => $quantity * $currentPrice,
+                    'purchase_amount' => $quantity * $averageBuyPrice,
+                ]);
             }
+        }
+        event(new MyEvent($prices));
+        $this->refreshTotals();
 
-            // إعادة تحميل البيانات المحدثة
-            // $this->GetPrices();
+        $this->dispatch('success-message', message: 'تم تحديث الأسعار بنجاح لحظيا ');
+
+    }
+
+    private function fetchAllPrices()
+    {
+        try {
+            // جلب الأسعار من API
+            $response = Http::timeout(10)->get("https://api.binance.com/api/v3/ticker/price");
+            if ($response->successful()) {
+                // جلب أسماء العملات من قاعدة البيانات وتحويلها إلى أحرف كبيرة
+                $Price_Symbols = PriceSymbol::pluck('currency_name')->map(fn($symbol) => strtoupper($symbol))->toArray();
+                // dd($Price_Symbols);
+                if (empty($Price_Symbols)) {
+                    Log::error("Price_Symbols is empty. Check database.");
+                    return [];
+                }
+
+                // تصفية الأزواج المطلوبة فقط
+                $filteredPrices = collect($response->json())->filter(function ($priceData) use ($Price_Symbols) {
+                    $symbol = $priceData['symbol'];
+                    $currency = strtoupper(substr($symbol, 0, -4)); // اسم العملة (الأحرف الكبيرة)
+                    $pair = substr($symbol, -4); // الزوج (مثل USDT)
+                    return $pair === 'USDT' && in_array($currency, $Price_Symbols);
+                })->mapWithKeys(function ($priceData) {
+                    $currency = strtoupper(substr($priceData['symbol'], 0, -4)); // تحويل اسم العملة للأحرف الكبيرة
+                    return [$currency => (float)$priceData['price']];
+                })->toArray();
+
+                // تحقق من النتيجة بعد التصفية
+                if (empty($filteredPrices)) {
+                    Log::warning("Filtered prices are empty. Check the matching logic.");
+                }
+                // dd($filteredPrices);
+                return $filteredPrices;
+            }
         } catch (\Exception $e) {
-            Log::error("Error updating prices: " . $e->getMessage());
+            Log::error("Error fetching prices: " . $e->getMessage());
+            return [];
         }
     }
 
-    // New jobs
-    public function broadcastTest()
-    {
-        $prices = PriceSymbol::pluck('current_price', 'currency_name')->toArray();
-        event(new MyEvent($prices));
-        $this->dispatch('success-message', message:'تم بث البيانات بنجاح!');
-    }
 
 
     public function addCurrency()
@@ -240,33 +133,27 @@ class NewPriceSymbols extends Component
             'newCurrency.quantity' => 'required|numeric',
         ]);
 
-        $currency = PriceSymbol::create([
+        PriceSymbol::create([
             'currency_name' => $this->newCurrency['currency_name'],
             'average_buy_price' => $this->newCurrency['average_buy_price'],
             'quantity' => $this->newCurrency['quantity'],
-            'current_price' => 0, // قيمة ابتدائية
-            'percentage_change' => 0, // قيمة ابتدائية
-            'current_value' => 0, // قيمة ابتدائية
             'purchase_amount' => $this->newCurrency['average_buy_price'] * $this->newCurrency['quantity'],
         ]);
 
-        $this->mount();
-        $this->reset('newCurrency');
-        $this->dispatch('close-modal');
-        $this->dispatch('currency-added', id:$currency->id);
-        $this->dispatch('success-message', message:'تم إضافة العملة بنجاح!');
+        $this->resetForm();
+        $this->refreshTotals();
+        $this->dispatch('success-message', message: 'تم إضافة العملة بنجاح!');
     }
 
-    public function editCurrencyR($id)
+    public function editCurrency($id)
     {
         $currency = PriceSymbol::find($id);
         if ($currency) {
-            $this->editCurrency = $currency->toArray(); // تحويل الكائن إلى مصفوفة
+            $this->editCurrency = $currency->toArray();
         } else {
-            $this->dispatch('error-message', message:'العملة غير موجودة');
+            $this->dispatch('error-message', message: 'العملة غير موجودة');
         }
     }
-
 
     public function updateCurrency()
     {
@@ -278,51 +165,33 @@ class NewPriceSymbols extends Component
         ]);
 
         $currency = PriceSymbol::findOrFail($this->editCurrency['id']);
-        $purchaseAmount = $this->editCurrency['average_buy_price'] * $this->editCurrency['quantity'];
-        $afterSell = $this->editCurrency['quantity'] * $this->editCurrency['target'];
-
         $currency->update([
             'currency_name' => $this->editCurrency['currency_name'],
             'average_buy_price' => $this->editCurrency['average_buy_price'],
             'quantity' => $this->editCurrency['quantity'],
-            'purchase_amount' => $purchaseAmount,
-            'target' => $this->editCurrency['target'],
-            'afterSell' => $afterSell,
+            'purchase_amount' => $this->editCurrency['average_buy_price'] * $this->editCurrency['quantity'],
+            'afterSell' => $this->editCurrency['quantity'] * $this->editCurrency['target'],
         ]);
 
-        $this->mount();
-        $this->dispatch('success-message', message:'تم تعديل العملة بنجاح');
-        $this->dispatch('close-modal');
-        $this->reset('editCurrency'); // إعادة تعيين الخاصية
-    }
-
-    public function confirmDelete($id)
-    {
-        $this->deleteId = $id; // تعيين المعرف
+        $this->resetForm();
+        $this->refreshTotals();
+        $this->dispatch('success-message', message: 'تم تعديل العملة بنجاح!');
     }
 
     public function deleteCurrency()
     {
         if ($this->deleteId && $currency = PriceSymbol::find($this->deleteId)) {
             $currency->delete();
-            $this->reset('deleteId'); // إعادة تعيين المعرف
-            $this->dispatch('close-modal');
-            $this->mount();
-            $this->dispatch('success-message', message:'تم حذف العملة بنجاح');
-            $this->dispatch('currency-deleted', id:$currency->deleteId);
+            $this->reset('deleteId');
+            $this->refreshTotals();
+            $this->dispatch('success-message', message: 'تم حذف العملة بنجاح!');
         } else {
-            $this->dispatch('error-message', message:'العملة غير موجودة');
+            $this->dispatch('error-message', message: 'العملة غير موجودة');
         }
     }
 
-    public function closeModal()
-    {
-        $this->resetForm();
-    }
-
-
     #[Layout('layouts.app')]
-    public function render(): View|Application|Factory
+    public function render()
     {
         return view('livewire.NewPriceSymbols');
     }

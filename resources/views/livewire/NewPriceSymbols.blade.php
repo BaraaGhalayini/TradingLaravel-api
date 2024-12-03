@@ -18,8 +18,8 @@
         Pusher.logToConsole = true;
 
         // إعداد اتصال Pusher
-        var pusher = new Pusher('3df0992a1e99199d1e07', {
-            cluster: 'eu',
+        const pusher = new Pusher('{{ env('PUSHER_APP_KEY') }}', {
+            cluster: '{{ env('PUSHER_APP_CLUSTER') }}',
             encrypted: true // استخدام اتصال مشفر
         });
 
@@ -28,13 +28,14 @@
 
         // الاستماع إلى حدث priceUpdated
         channel.bind('priceUpdated', function(data) {
-            if (data.prices) {
-                console.log('Received prices:', data.prices); // عرض البيانات في وحدة التحكم
-                Livewire.emit('priceUpdated', data.prices); // إرسال البيانات إلى Livewire
+            if (data.prices && Array.isArray(data.prices)) {
+                console.log('Received prices:', data.prices);
+                Livewire.dispatch('priceUpdated', data.prices);
             } else {
-                console.error('No prices received', data); // التعامل مع البيانات الفارغة
+                console.error('Invalid prices data:', data);
             }
         });
+
 
         let sidebarNotification = document.createElement('div');
         sidebarNotification.id = 'sidebar-notification';
@@ -257,7 +258,6 @@
     }
 }">
 
-
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="bg-white shadow-md rounded-lg p-6">
             <!-- شريط الإشعار -->
@@ -268,7 +268,6 @@
 
             <div class="bg-white shadow-md rounded-lg p-6">
                 <!-- قسم الإجماليات -->
-                {{-- <div class="flex flex-wrap items-center justify-around space-y-4 mb-6"> --}}
                 <div class="flex flex-wrap items-center justify-around mb-6">
                     <div class="flex flex-col items-center space-y-1">
                         <span class="text-2xl font-bold text-gray-800">
@@ -299,26 +298,23 @@
                         <span>إضافة عملة جديدة</span>
                     </button>
 
-                    <!-- زر التحديث اليدوي -->
+                    {{-- <!-- زر التحديث اليدوي -->
                     <button type="button"
                         class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 flex items-center space-x-2 rtl:space-x-reverse"
                         wire:click="updatePricesManually" wire:loading.attr="disabled">
                         <i class="fas fa-sync-alt"></i>
                         <span>تحديث يدوي</span>
-                    </button>
+                    </button> --}}
 
                     <!-- زر بث البيانات -->
                     <button type="button"
-                        class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 flex items-center space-x-2 rtl:space-x-reverse"
-                        wire:click="broadcastTest" wire:loading.attr="disabled">
+                        class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 flex items-center space-x-2 rtl:space-x-reverse"
+                        wire:click="updatePrices" wire:loading.attr="disabled">
                         <i class="fas fa-broadcast-tower"></i>
                         <span>بث البيانات</span>
                     </button>
                 </div>
             </div>
-
-
-
 
             <!-- جدول البيانات -->
             <div class="overflow-x-auto">
@@ -359,7 +355,7 @@
                             </th>
                             <th class="py-3 px-4 border-b" x-show="columns.target">هدف معلق</th>
                             <th class="py-3 px-4 border-b" x-show="columns.profit">
-                                <button wire:click="sortBy('percentage_change')"
+                                <button wire:click="sortBy('afterSell')"
                                     class="flex items-center justify-center space-x-1 rtl:space-x-reverse text-green-600 hover:underline">
                                     <i class="fas fa-chart-line"></i>
                                     <span> ربح المعلق</span>
@@ -410,14 +406,14 @@
                                     {{ number_format($Price_Symbol->afterSell, 0) }}$</td>
                                 <td class="py-3 px-4 flex space-x-2 rtl:space-x-reverse" x-show="columns.actions">
                                     <!-- Edit Button -->
-
-
-                                    <button wire:click="editCurrencyR({{ $Price_Symbol->id }})" @click="editModal = true"
+                                    <button wire:click="editCurrency({{ $Price_Symbol->id }})"
+                                        @click="editModal = true"
                                         class="px-2 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 flex items-center space-x-2 text-sm">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <!-- Delete Button -->
-                                    <button wire:click="confirmDelete({{ $Price_Symbol->id }})" @click="deleteModal = true"
+                                    <button wire:click="confirmDelete({{ $Price_Symbol->id }})"
+                                        @click="deleteModal = true"
                                         class="px-2 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center space-x-2 text-sm">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
@@ -438,7 +434,6 @@
     </div>
     @include('models.modals')
 </div>
-
 
 
 
@@ -503,19 +498,19 @@
                 }, 3000);
             }
 
-            // عرض إشعار جانبي باستخدام Toastr
-            toastr.info('تم تحديث الأسعار بنجاح!');
-
-            prices.forEach(function(price) {
+            // تحديث الصفوف بناءً على الأسعار الجديدة
+            prices.forEach((price) => {
                 let row = document.querySelector(`#row-${price.symbol}`);
                 if (row) {
-                    row.classList.add('bg-success'); // إضافة تأثير بصري
-                    setTimeout(() => row.classList.remove('bg-success'), 2000); // إزالة التأثير بعد 2 ثانية
-
-                    // تحديث الصف باستخدام Livewire
-                    Livewire.dispatch('updateRow', price.symbol, price.price);
+                    // تأثيرات بصرية لتحديث الصف
+                    row.classList.add('bg-green-100');
+                    setTimeout(() => row.classList.remove('bg-green-100'), 2000);
                 }
             });
+
+            // عرض إشعار جانبي باستخدام Toastr
+            // toastr.info('تم تحديث الأسعار بنجاح لحظيا !!');
+
         });
     </script>
 @endpush
