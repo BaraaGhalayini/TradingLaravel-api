@@ -20,6 +20,8 @@ return new class extends Migration
             $table->decimal('quantity', 16, 8); // الكمية التي تم شراؤها
             $table->decimal('purchase_amount', 16, 2)->nullable(); // مبلغ الشراء
             $table->decimal('current_value', 16, 2)->nullable(); // قيمة المبلغ الآن
+            $table->decimal('target', 16, 3)->nullable(); // سعر الهدف
+            $table->decimal('afterSell', 16, 2)->nullable(); // قيمة المبلغ المفترض بعد البيع
             $table->timestamps(); // التواريخ الافتراضية (created_at, updated_at)
         });
     }

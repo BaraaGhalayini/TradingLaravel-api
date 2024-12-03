@@ -104,11 +104,22 @@
                                 value="{{ @$editCurrency['average_buy_price'] * @$editCurrency['quantity'] ?? 0 }}"
                                 readonly>
                         </div>
+                        <div class="mb-4">
+                            <label for="target" class="block text-sm font-medium text-gray-700">الهدف</label>
+                            <input type="number" id="target"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                step="0.0001" wire:model.live="editCurrency.target">
+                            @error('editCurrency.target')
+                                <span class="text-red-500 text-sm">{{ $message }}</span>
+                            @enderror
+                        </div>
+
                         <div class="flex justify-end">
                             <button type="submit"
                                 class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700">حفظ
                                 التعديلات</button>
                         </div>
+
                     </form>
                 @else
                     <p class="text-center text-gray-500">لا توجد بيانات لتحريرها.</p>

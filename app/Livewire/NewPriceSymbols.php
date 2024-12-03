@@ -21,8 +21,11 @@ class NewPriceSymbols extends Component
     public $symbols;
     public $GetPrices;
     public $totalCurrentValue;
+    public $totalPurchaseAmount;
+    public $totalAfterSell;
 
-
+    public $sortField = 'current_value'; // الحقل الافتراضي للترتيب
+    public $sortDirection = 'desc'; // الاتجاه الافتراضي للترتيب
     public $newCurrency = [
         'currency_name' => '',
         'average_buy_price' => 0,
@@ -48,11 +51,26 @@ class NewPriceSymbols extends Component
         // $this->pricesSymbols = PriceSymbol::orderBy('current_value', 'desc')->get();
         // $this->pricesSymbols = PriceSymbol::get()->sortBy('current_value'); percentage_change
         $this->pricesSymbols = PriceSymbol::orderBy('current_value', 'desc')
-                                            // ->orderBy('current_value', 'desc')
+                                            // ->orderBy('percentage_change', 'desc')
                                             ->get();
 
 
         $this->totalCurrentValue = PriceSymbol::sum('current_value');
+        $this->totalPurchaseAmount = PriceSymbol::sum('purchase_amount');
+        $this->totalAfterSell = PriceSymbol::sum('afterSell');
+    }
+
+
+    public function sortBy($field)
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
+
+        $this->pricesSymbols = PriceSymbol::orderBy($this->sortField, $this->sortDirection)->get();
     }
 
     public function getCalculatedValueProperty()
@@ -256,16 +274,20 @@ class NewPriceSymbols extends Component
             'editCurrency.currency_name' => 'required|string|max:255',
             'editCurrency.average_buy_price' => 'required|numeric',
             'editCurrency.quantity' => 'required|numeric',
+            'editCurrency.target' => 'required|numeric',
         ]);
 
         $currency = PriceSymbol::findOrFail($this->editCurrency['id']);
         $purchaseAmount = $this->editCurrency['average_buy_price'] * $this->editCurrency['quantity'];
+        $afterSell = $this->editCurrency['quantity'] * $this->editCurrency['target'];
 
         $currency->update([
             'currency_name' => $this->editCurrency['currency_name'],
             'average_buy_price' => $this->editCurrency['average_buy_price'],
             'quantity' => $this->editCurrency['quantity'],
             'purchase_amount' => $purchaseAmount,
+            'target' => $this->editCurrency['target'],
+            'afterSell' => $afterSell,
         ]);
 
         $this->mount();
