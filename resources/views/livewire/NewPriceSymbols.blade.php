@@ -361,7 +361,8 @@
                                     <span> ربح المعلق</span>
                                 </button>
                             </th>
-                            <th class="py-3 px-4 border-b" x-show="columns.actions">إجراءات</th>
+                            {{-- <th class="py-3 px-4 border-b" x-show="columns.actions">إجراءات</th> --}}
+                            <th class="py-3 px-4 border-b" >إجراءات</th>
 
                         </tr>
                     </thead>
@@ -404,13 +405,15 @@
                                     {{ number_format($Price_Symbol->target, 3) }}$</td>
                                 <td class="py-3 px-4  bg-green-100 text-green-800" x-show="columns.profit">
                                     {{ number_format($Price_Symbol->afterSell, 0) }}$</td>
-                                <td class="py-3 px-4 flex space-x-2 rtl:space-x-reverse" x-show="columns.actions">
+                                {{-- <td class="py-3 px-4 flex space-x-2 rtl:space-x-reverse" x-show="columns.actions"> --}}
+                                <td class="py-3 px-4 flex space-x-2 rtl:space-x-reverse">
                                     <!-- Edit Button -->
-                                    <button wire:click="editCurrency({{ $Price_Symbol->id }})"
+                                    <button wire:click="editCurrency22({{ $Price_Symbol->id }})"
+                                    {{-- <button wire:click="editCurrency({{ $Price_Symbol->id }})" --}}
                                         @click="editModal = true"
                                         class="px-2 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 flex items-center space-x-2 text-sm">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
+                                    <i class="fas fa-edit"></i>
+                                </button>
                                     <!-- Delete Button -->
                                     <button wire:click="confirmDelete({{ $Price_Symbol->id }})"
                                         @click="deleteModal = true"

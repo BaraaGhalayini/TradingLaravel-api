@@ -66,6 +66,7 @@
                 </button>
             </div>
             <div class="px-6 py-4">
+
                 @if ($editCurrency)
                     <form wire:submit="updateCurrency">
                         <div class="mb-4">

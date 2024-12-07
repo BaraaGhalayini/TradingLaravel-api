@@ -145,9 +145,12 @@ class NewPriceSymbols extends Component
         $this->dispatch('success-message', message: 'تم إضافة العملة بنجاح!');
     }
 
-    public function editCurrency($id)
+    public function editCurrency22($id)
     {
+        // Log::debug("editCurrency called with ID: $id");  // سجّل لتتأكد أن الدالة تُستدعى
+
         $currency = PriceSymbol::find($id);
+
         if ($currency) {
             $this->editCurrency = $currency->toArray();
         } else {
@@ -175,8 +178,17 @@ class NewPriceSymbols extends Component
 
         $this->resetForm();
         $this->refreshTotals();
+        $this->dispatch('close-modal');
+
         $this->dispatch('success-message', message: 'تم تعديل العملة بنجاح!');
     }
+
+    public function confirmDelete($id)
+    {
+        $this->deleteId = $id; // تعيين المعرف
+        $this->deleteCurrency();
+    }
+
 
     public function deleteCurrency()
     {
@@ -184,6 +196,8 @@ class NewPriceSymbols extends Component
             $currency->delete();
             $this->reset('deleteId');
             $this->refreshTotals();
+            $this->dispatch('close-modal');
+
             $this->dispatch('success-message', message: 'تم حذف العملة بنجاح!');
         } else {
             $this->dispatch('error-message', message: 'العملة غير موجودة');
