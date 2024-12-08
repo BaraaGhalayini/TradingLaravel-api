@@ -14,27 +14,29 @@
 @push('script_head')
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
     <script>
-        // تمكين تسجيل Pusher - يجب تعطيله في الإنتاج
-        Pusher.logToConsole = true;
+        // // تمكين تسجيل Pusher - يجب تعطيله في الإنتاج
+        // Pusher.logToConsole = true;
 
-        // إعداد اتصال Pusher
-        const pusher = new Pusher('{{ env('PUSHER_APP_KEY') }}', {
-            cluster: '{{ env('PUSHER_APP_CLUSTER') }}',
-            encrypted: true // استخدام اتصال مشفر
-        });
+        // // إعداد اتصال Pusher
+        // const pusher = new Pusher('{{ env('PUSHER_APP_KEY') }}', {
+        //     cluster: '{{ env('PUSHER_APP_CLUSTER') }}',
+        //     encrypted: true // استخدام اتصال مشفر
+        // });
 
-        // الاشتراك في القناة
-        var channel = pusher.subscribe('my-channel');
+        // // الاشتراك في القناة
+        // var channel = pusher.subscribe('my-channel');
 
-        // الاستماع إلى حدث priceUpdated
-        channel.bind('priceUpdated', function(data) {
-            if (data.prices && Array.isArray(data.prices)) {
-                console.log('Received prices:', data.prices);
-                Livewire.dispatch('priceUpdated', data.prices);
-            } else {
-                console.error('Invalid prices data:', data);
-            }
-        });
+        // // الاستماع إلى حدث priceUpdated
+        // channel.bind('priceUpdated', function(data) {
+        //     if (data.prices && Array.isArray(data.prices)) {
+        //         console.log('Received prices:', data.prices);
+        //         Livewire.dispatch('priceUpdated', data.prices);
+        //     } else {
+        //         console.error('Invalid prices data:', data);
+        //     }
+        // });
+
+
 
 
         let sidebarNotification = document.createElement('div');
@@ -124,6 +126,11 @@
                 </div>
             </div>
 
+            {{-- @foreach ($pricesSymbols as $Price_Symbol) --}}
+
+
+
+
             <!-- جدول البيانات -->
             <div x-data="{ sortField: @entangle('sortField'), sortDirection: @entangle('sortDirection') }" class="overflow-x-auto">
                 <table class="min-w-full bg-white border border-gray-200 text-sm text-gray-600">
@@ -193,6 +200,25 @@
                                     <span>التغيير (24 ساعة)</span>
                                 </button>
                             </th>
+                            <th class="py-3 px-4 border-b">
+                                <button wire:click="sortBy('lowestPrice')"
+                                    class="flex items-center space-x-1 rtl:space-x-reverse">
+                                    <i class="fas"
+                                        :class="sortField === 'lowestPrice' && sortDirection === 'asc' ?
+                                            'fa-sort-up' : 'fa-sort-down'"></i>
+                                    <span>اقل قاع</span>
+                                </button>
+                            </th>
+                            <th class="py-3 px-4 border-b">
+                                <button wire:click="sortBy('percentage_change_form_low_to_now')"
+                                    class="flex items-center space-x-1 rtl:space-x-reverse">
+                                    <i class="fas"
+                                        :class="sortField === 'percentage_change_form_low_to_now' &&
+                                            sortDirection === 'asc' ?
+                                            'fa-sort-up' : 'fa-sort-down'"></i>
+                                    <span>التغيير (من قاع مارس)</span>
+                                </button>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -200,6 +226,11 @@
                             @php
                                 $priceChangeClass =
                                     $Price_Symbol->price_change_24h >= 0
+                                        ? 'bg-green-100 text-green-800'
+                                        : 'bg-red-100 text-red-800';
+
+                                $priceChangeAllClass =
+                                    $Price_Symbol->percentage_change_form_low_to_now >= 0
                                         ? 'bg-green-100 text-green-800'
                                         : 'bg-red-100 text-red-800';
                             @endphp
@@ -212,7 +243,11 @@
                                 <td class="py-3 px-4">{{ $Price_Symbol->market_cap_rank }}</td>
                                 <td class="py-3 px-4">{{ number_format($Price_Symbol->market_cap, 0) }} $</td>
                                 <td class="py-3 px-4">{{ number_format($Price_Symbol->volume_24h, 0) }} $</td>
-                                <td class="py-3 px-4 {{ $priceChangeClass }}">{{ number_format($Price_Symbol->price_change_24h, 2) }}%</td>
+                                <td class="py-3 px-4 {{ $priceChangeClass }}">
+                                    {{ number_format($Price_Symbol->price_change_24h, 2) }}%</td>
+                                <td class="py-3 px-4 "> {{ number_format($Price_Symbol->lowestPrice, 2) }}$</td>
+                                <td class="py-3 px-4 {{ $priceChangeAllClass }}">
+                                    {{ number_format($Price_Symbol->percentage_change_form_low_to_now, 2) }}%</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -254,35 +289,15 @@
             toastr.success(event.detail.message);
             sidebarNotification.style.display = 'none'; // إخفاء الإشعار الجانبي إذا كان ظاهرًا
         });
-        Livewire.on('currency-added', (id) => {
-            const newRow = document.getElementById(`row-${event.detail.id}`);
-            if (newRow) {
-                // تأكد من إزالة أي تأثيرات سابقة
-                newRow.classList.remove('bg-green-100');
 
-                // أضف التأثير
-                newRow.classList.add('bg-green-100');
-
-                // إزالة التأثير بعد 2 ثانية
-                setTimeout(() => {
-                    newRow.classList.remove('bg-green-100');
-                }, 2000);
-            }
-        });
-
-        Livewire.on('currency-deleted', (id) => {
-            const deletedRow = document.getElementById(`row-${event.detail.id}`);
-            if (deletedRow) {
-                // تقليل الشفافية تدريجيًا
-                deletedRow.style.transition = 'opacity 0.5s ease';
-                deletedRow.style.opacity = '0';
-
-                // إزالة العنصر بعد انتهاء التأثير
-                setTimeout(() => {
-                    deletedRow.remove();
-                }, 500);
-            }
-        });
+        // Livewire.on('priceUpdated', (data) => {
+        //     if (data.prices && Array.isArray(data.prices)) {
+        //         console.log('Received prices:', data.prices);
+        //         Livewire.dispatch('priceUpdated', data.prices);
+        //     } else {
+        //         console.error('Invalid prices data:', data);
+        //     }
+        // });
 
 
 

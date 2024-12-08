@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('price_symbols', function (Blueprint $table) {
-            $table->string('sector')->nullable()->after('currency_name'); // إضافة عمود القطاع
+            $table->string('lowestPrice')->nullable()->after('slug'); // إضافة عمود القطاع
+            $table->string('percentage_change_form_low_to_now')->nullable()->after('slug'); // إضافة عمود القطاع
         });
     }
 
@@ -22,7 +23,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('price_symbols', function (Blueprint $table) {
-            $table->dropColumn('sector');
+            $table->dropColumn('lowestPrice');
         });
     }
 };
+
